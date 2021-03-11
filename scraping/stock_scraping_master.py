@@ -15,7 +15,7 @@ headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/
 def get_share_code():
     # openpyxl로 엑셀 파일 읽기
     from openpyxl import load_workbook  # 파일 불러오기
-    wb = load_workbook("C:\\Users\\MING\\PycharmProjects\\web_automation\\stock_project\\krxcode.xlsx")  # 불러올 파일명 넣기
+    wb = load_workbook("stock_data\\krxcode.xlsx")  # 불러올 파일명 넣기
     ws = wb.active
 
     print("get Share Code Dict")
@@ -40,6 +40,7 @@ def get_naver_market_code():
         market_code = line['href'].replace("/sise/sise_group_detail.nhn?type=upjong&no=", "")
         mk_code_dict[market_name] = market_code
     del mk_code_dict['기타']
+    print(mk_code_dict)
     print('mk_code_dict completed')
     # mk_code_dict를 리턴 {업종명: 업종코드}
     return mk_code_dict
@@ -66,20 +67,22 @@ def get_share_code_from_naver(mk_code_dict):
             share_code = line.a['href'].replace("/item/main.nhn?code=", "")
             # 마켓과 종목 코드를 엑셀파일로 저장
             ws.append([share_code, share_name, value, key])
-    wb.save("mk_sh_code_naver.xlsx")
+    wb.save("stock_data\\mk_sh_code_naver.xlsx")
     print("Total Code file Completed")
 
 # 3. 엑셀에서 업종코드 딕셔너리로 가져오기
 def get_code_from_excel():
     from openpyxl import load_workbook  # 파일 불러오기
     # 상대경로로 수정해야함
-    wb = load_workbook("C:\\Users\\MING\\PycharmProjects\\web_automation\\stock_project\\mk_sh_code_naver.xlsx")  # 불러올 파일명 넣기
+    # wb = load_workbook("C:\\Users\\MING\\PycharmProjects\\web_automation\\stock_project\\mk_sh_code_naver.xlsx")  # 불러올 파일명 넣기
+    wb = load_workbook("stock_data\\mk_sh_code_naver.xlsx")
     ws = wb.active
 
     code_dict = {}
     for x in range(2, ws.max_row + 1):
         code = [ws.cell(row=x, column=y).value for y in range(1, ws.max_column + 1)]
         code_dict.setdefault(f"{code[0]}", {"Share Name": code[1], "Market Code": str(code[2]), "Market Name": code[3]})
+    print(code_dict)
     print("code_dict completed")
     # 종합 코드딕트 생성 {종콕코드 : {"Share Name": 종목명, "Market Code": 업종코드, "Market Name": 업종명}
     return code_dict
@@ -121,7 +124,7 @@ def get_theme_share_info(theme_code_list):
 
     print("Start get share code")
     print(time.strftime("%Y-%m-%d %H:%M:%S"))
-    csv_file = open(f"theme_share_info_{datetime.date.today()}.csv", "w", encoding='utf-8-sig', newline="")
+    csv_file = open(f"stock_data\\theme_share_info_{datetime.date.today()}.csv", "w", encoding='utf-8-sig', newline="")
     csv_writer = csv.writer(csv_file)
 
     # 헤더
@@ -185,7 +188,7 @@ def get_financial_info(code_dict):
     driver.maximize_window()
     driver.implicitly_wait(3)
 
-    # header = ",Share Code,Share Name,Market Code,Market Name,매출액,영업이익,영업이익(발표기준),세전계속사업이익,당기순이익,  당기순이익(지배),  당기순이익(비지배),자산총계,부채총계,자본총계,  자본총계(지배),  자본총계(비지배),자본금,영업활동현금흐름,투자활동현금흐름,재무활동현금흐름,CAPEX,FCF,이자발생부채,영업이익률,순이익률,ROE(%),ROA(%),부채비율,자본유보율,EPS(원),PER(배),BPS(원),PBR(배),현금DPS(원),현금배당수익률,현금배당성향(%),발행주식수(보통주)".split(',')
+    # header = "기간 ,Share Code,Share Name,Market Code,Market Name,매출액,영업이익,영업이익(발표기준),세전계속사업이익,당기순이익,  당기순이익(지배),  당기순이익(비지배),자산총계,부채총계,자본총계,  자본총계(지배),  자본총계(비지배),자본금,영업활동현금흐름,투자활동현금흐름,재무활동현금흐름,CAPEX,FCF,이자발생부채,영업이익률,순이익률,ROE(%),ROA(%),부채비율,자본유보율,EPS(원),PER(배),BPS(원),PBR(배),현금DPS(원),현금배당수익률,현금배당성향(%),발행주식수(보통주)".split(',')
 
     print("Get Year Financial Info Start : ")
     print(time.strftime("%Y-%m-%d %H:%M:%S"))
@@ -212,24 +215,37 @@ def get_financial_info(code_dict):
                 soup = BeautifulSoup(driver.page_source, "html.parser")
 
                 # 기간 정보
-                period_data = soup.select('table.gHead01')[3].select('thead > tr > th')[2:7]
-                period = [line.text.strip()[:7] for line in period_data]
+                # period_data = soup.select('table.gHead01')[3].select('thead > tr > th')[2:7]
+                # period = [line.text.strip()[:7] for line in period_data]
+
+                period_data = soup.select('table.gHead01')[3].select('thead > tr > th')[2:]
+                period = []
+                for line in period_data:
+                    if line.span.text == "(IFRS연결)":
+                        date = line.text.replace("(IFRS연결)", "").strip()
+                    elif line.span.text == "(IFRS별도)":
+                        date = line.text.replace("(IFRS별도)", "").strip()
+                    else:
+                        date = line.text.replace("(GAAP개별)", "").strip()
+                    period.append(date)
+                # print(period_year)
 
                 # financial_dict에 코드정보 입력
                 financial_dict = {'Share Code': f'{str(key)}'}
-                financial_dict.update(value)  # code_dict의 정보를 추가
+                financial_dict.update(value)  # code_dict의 밸류값 추가
 
                 # 재무정보
                 financial_table = soup.select('table.gHead01')[3].select('tbody > tr')
                 for line in financial_table:
                     name = line.select_one('th').text  # 재무 항목명
-                    data = line.select('td')[:5]  # 재무 데이터 : 앞 다섯 기간만, 컨센 제외
+                    data = line.select('td')  # 재무 데이터 : 앞 다섯 기간만, 컨센 제외
                     financial_dict.setdefault(name, [num.text.replace(",", "") for num in data])
-
+                    print(financial_dict)
                 # financial_dict를 데이터 프레임으로
                 # 컬럼 = list(financial_dict.keys()) = name, 인덱스 = 기간정보
                 financial_df = DataFrame(financial_dict, columns=list(financial_dict.keys()), index=period)
-                financial_df.to_csv(f"{p_val}실적_raw_{datetime.date.today()}.csv", mode="a", header=False, encoding='utf-8-sig')
+                print(financial_df)
+                financial_df.to_csv(f"stock_data\\{p_val}실적_raw_{datetime.date.today()}.csv", mode="a", header=False, encoding='utf-8-sig')
         except:
             pass
             print(f'pass: {key}')
@@ -302,7 +318,7 @@ def get_etf_info(etf_code):
     from bs4 import BeautifulSoup
 
     # # CSV
-    csv_file = open(f'etf_{datetime.date.today()}.csv', 'w', encoding='utf-8-sig', newline='')
+    csv_file = open(f'stock_data\\etf_{datetime.date.today()}.csv', 'w', encoding='utf-8-sig', newline='')
     csv_writer = csv.writer(csv_file)
     csv_writer.writerow(['ETF이름', '링크', 'ETF코드', '운용사', '수수료', '시가총액(억 원)', '수익률', '', '', '', '구성종목 TOP 10'])
     csv_writer.writerow(['', '', '', '', '', '', '1개월', '3개월', '6개월', '1년', '1위', '', '2위', '', '3위', '', '4위', '', '5위', '', '6위', '','7위', '', '8위', '', '9위', '', '10위', ''])
@@ -369,86 +385,194 @@ def get_etf_info(etf_code):
     print(time.strftime("%Y-%m-%d %H:%M:%S"))
 
 
-# etf_code = get_etf_code()
-# get_etf_info(etf_code)
-
-
-# 네이버 업종 페이지에서 실시간 밸류팩터들 추출
-# 번갈아 가면서 작동 ㄴㄴ
-def get_real_time_value(mk_code_dict):
-    import time
+# 네이버 업종 밸류옵션값 변경
+def get_realtime_value(mk_code_dict):
     import csv
+    import time
+    import datetime
+    from bs4 import BeautifulSoup
     from selenium import webdriver
     from selenium.webdriver.common.by import By
     from selenium.webdriver.support.ui import WebDriverWait
     from selenium.webdriver.support import expected_conditions as EC
-    from bs4 import BeautifulSoup
-
 
     # CSV
-    csv_file = open('종목 실시간 밸류에이션.csv', 'a', encoding='utf-8-sig', newline='')
+    csv_file = open(f'stock_data\\realtime_stock_value_{datetime.date.today()}.csv', 'w', encoding='utf-8-sig', newline='')
     csv_writer = csv.writer(csv_file)
-    csv_writer.writerow(['종목코드', '종목명', '업종코드', '업종명', '시가총액', '외인비율', 'PER', 'ROE', 'ROA', 'PBR'])
+    csv_writer.writerow(['URL', '종목코드', '종목명', '업종코드', '업종명', '등락률', '시가총액 (억 원)', 'PER', 'ROE', 'PEG', 'ROA', 'PBR', '유보율'])
 
-    #  headless
+    # headless
     options = webdriver.ChromeOptions()
     options.headless = True
     options.add_argument("window-size=1920x1080")
-    options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.104 Safari/537.36")
+    options.add_argument(
+        "user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.104 Safari/537.36")
     driver = webdriver.Chrome(options=options)
     driver.maximize_window()
 
-    #  mk_code_dict를 파라미터로
-    for key, value in mk_code_dict.items():
+    for mk_name, mk_code in mk_code_dict.items():
         try:
-            time.sleep(5)
-            print(f"Start {value} Category")
-            driver.get(f'https://finance.naver.com/sise/sise_group_detail.nhn?type=upjong&no={value}')
-            wait = WebDriverWait(driver, 3)
+            # time.sleep(3)
+            print(f"Start {mk_name} Category")
+            url = f'https://finance.naver.com/sise/sise_group_detail.nhn?type=upjong&no={mk_code}'
 
-            # 기존 옵션 제거
-            wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, '#option1'))).click()  #  거래량
-            wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, '#option2'))).click()  #  매수호가
-            wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, '#option3'))).click()  # 거래대금
-            wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, '#option8'))).click()  #  매도호가
-            wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, '#option9'))).click()  #  전일 거래량
+            # 셀레니움으로 받아야 옵션 정보가 유지됨
+            driver.get(url)
+            driver.implicitly_wait(3)
 
-            # 원하는 옵션 클릭
-            wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, '#option4'))).click()  #  시가총액
-            wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, '#option6'))).click()  #  PER
-            wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, '#option12'))).click()  #  ROE
-            wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, '#option18'))).click()  #  ROA
-            wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, '#option24'))).click()  #  PBR
-            wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, '#option27'))).click()  # 유보율
+            # lxml로 파싱
+            soup = BeautifulSoup(driver.page_source, "lxml")
 
-            # 옵션 적용 클릭
-            wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, 'div.item_btn > a'))).click()  # 적용하기
+            # 타이틀 뽑기
+            title_table = soup.select('#contentarea > div:nth-child(5) > table > thead > tr:nth-child(1) > th')
+            title = [line.text for line in title_table]
 
-            time.sleep(1.5)
-            # driver.save_screenshot(f"screenshot{key}.png")
+            # title에 '거래량'이 있을 경우 원하는 밸류 옵션 셀레니움으로 재선택
+            if '거래량' in title:
+                driver.get(url)
+                wait = WebDriverWait(driver, 3)
+                time.sleep(0.5)
+
+                # 기존 옵션 제거
+                wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, '#option1'))).click()  # 거래량
+                wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, '#option2'))).click()  # 매수호가
+                wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, '#option3'))).click()  # 거래대금
+                wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, '#option8'))).click()  # 매도호가
+                wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, '#option9'))).click()  # 전일 거래량
+
+                # 원하는 옵션 클릭
+                wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, '#option4'))).click()  # 시가총액
+                wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, '#option6'))).click()  # PER
+                wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, '#option12'))).click()  # ROE
+                wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, '#option18'))).click()  # ROA
+                wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, '#option24'))).click()  # PBR
+                wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, '#option27'))).click()  # 유보율
+
+                # 옵션 적용 클릭
+                wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, 'div.item_btn > a'))).click()  # 적용하기
+
+                # 원하는 옵션 선택 후 다시 lxml파싱
+                soup = BeautifulSoup(driver.page_source, "lxml")
+                head = soup.select('#contentarea > div:nth-child(5) > table > thead > tr:nth-child(1) > th')
+                title = [line.text for line in head]
+
+            print(title)
             # 실시간 기업 밸류에이션 스크래핑
-            soup = BeautifulSoup(driver.page_source, "html.parser")
             table = soup.select('#contentarea > div.box_type_l')[1].select('tbody > tr')[:-2]
+
+            # 종목별 정보 추출 및 기록
             for line in table:
+                # 리스트에 이름 및 코드 추가
                 share_name = line.td.text
                 share_code = line.td.a['href'].replace("/item/main.nhn?code=", "")
-                info_list = [share_code, share_name, value, key]
+                share_link = "https://finance.naver.com/item/main.nhn?code=" + share_code
+                info_list = [share_link, str(share_code), share_name, str(mk_code), mk_name]
 
-                data = line.select('td')[4:-1]
+                # 벨류 데이터 추가
+                data = line.select('td')[3:-1]
                 for num in data:
-                    num = num.text.replace(',', '')
+                    num = num.text.replace(',', '').replace('+', '').replace('%', '')
+                    if num == '':
+                        num = None
+                    else:
+                        num = float(num)
                     info_list.append(num)
+
+                # PEG 밸류 추가
+                per = info_list[7]
+                roe = info_list[8]
+                # per, roe 값을 기준으로 info_list 값 달라짐
+                if per == None or roe == None:  # 값이 없는 경우 None
+                    info_list.insert(9, None)
+                elif per >= 0 and roe >= 0:  # 0보다 크거나 같으면 peg 계산
+                    peg = per / roe
+                    info_list.insert(9, f"{peg:.1f}")
+                else:
+                    info_list.insert(9, '')  # 마이너스인 경우 '' 반환
+
+                # csv에 기록
                 csv_writer.writerow(info_list)
-              # ws.append(info_list)
 
         except:
-            print(f"pass: {value}")
+            print(f"err code: {mk_code}")
             pass
-    # wb.save("종목 실시간 벨류에이션.xlsx")
+
     driver.quit()
     csv_file.close()
-    print("Excel file Completed")
+    print("RealTimeValue Completed")
 
+
+def get_market_fluctuation():
+    import csv
+    import datetime
+    from scraping.web_scraping import create_soup
+
+    csv_file = open(f"stock_data\\업종데일리등락률\\market_fluctuation_{datetime.date.today()}.csv", "a", encoding='utf-8-sig', newline="")
+    csv_writer = csv.writer(csv_file)
+
+    # period = datetime.date.today()
+
+    # 헤더
+    header = (['마켓명', '마켓코드', '전일대비 등락률'])
+    csv_writer.writerow(header)
+
+    # 종목코드 종목명 전일대비등락률
+    # theme_fluc_list = []
+    print("Start get market code")
+
+
+    # 네이버 금융 업종
+    url = "https://finance.naver.com/sise/sise_group.nhn?type=upjong"
+    soup = create_soup(url)
+    theme_data = soup.select_one("table.type_1").select("tr")[3:]
+    for line in theme_data:
+        td = line.select('td')
+        if len(td) <= 1:  # 의미없는 자료 제거
+            continue
+        market_name = td[0].text.strip()
+        market_code = td[0].a["href"].replace("/sise/sise_group_detail.nhn?type=upjong&no=", "")
+        fluc = td[1].text.strip().replace('%', '').replace('+', '')
+
+        csv_writer.writerow([market_name, market_code, fluc])
+
+    print("csv done")
+
+
+def get_theme_fluctuation():
+    import csv
+    import datetime
+    from scraping.web_scraping import create_soup
+
+    csv_file = open(f"stock_data\\테마데일리등락률\\theme_fluctuation_{datetime.date.today()}.csv", "a", encoding='utf-8-sig', newline="")
+    csv_writer = csv.writer(csv_file)
+
+    # period = datetime.date.today()
+
+    # 헤더
+    header = (['테마명', '테마코드', '전일대비 등락률'])
+    csv_writer.writerow(header)
+
+    # 테마명 테마코드 전일대비등락률
+    # theme_fluc_list = []
+    print("Start get theme code")
+    for page in range(1, 7):
+        print(f"On page : {page}")
+
+        # 네이버 금융 테마별 시세
+        url = f"https://finance.naver.com/sise/theme.nhn?&page={page}"
+        soup = create_soup(url)
+        theme_data = soup.select_one("table.type_1").select("tr")[3:]
+        for line in theme_data:
+            td = line.select('td')
+            if len(td) <= 1:  # 의미없는 자료 제거
+                continue
+            theme_name = td[0].text.strip()
+            theme_code = td[0].a["href"].replace("/sise/sise_group_detail.nhn?type=theme&no=", "")
+            fluc = td[1].text.strip().replace('%', '').replace('+', '')
+
+            csv_writer.writerow([theme_name, theme_code, fluc])
+
+    print("csv done")
 
 '''# 8. 네이버 금융에서 개별 etf 정보 가져오기
 def get_etf_info(etf_code):

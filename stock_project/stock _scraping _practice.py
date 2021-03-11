@@ -1,89 +1,127 @@
 # This Python file uses the following encoding: utf-8
 import os, sys
 
-# # 번갈아 가면서 작동 ㄴㄴ
+import requests
+from bs4 import BeautifulSoup
+import os
+import datetime
+from openpyxl import Workbook, load_workbook
+from openpyxl.drawing.image import Image
+
+
+# # 뉴스 저장 경로 및 파일 만들기
+# news_path = "stock_data\\News"
+# if not os.path.exists(news_path + "\\데일리 뉴스.xlsx"):
+#     os.mkdir(news_path)
 #
+#     wb = Workbook()
+#     ws = wb.active
+#     ws.title = "데일리 뉴스"
+#     ws.append(['링크', '키워드', '날짜', '타이틀', '요약'])
 #
-# def get_real_time_value(mk_code_dict):
-#     import time
-#     import csv
-#     from selenium import webdriver
-#     from selenium.webdriver.common.by import By
-#     from selenium.webdriver.support.ui import WebDriverWait
-#     from selenium.webdriver.support import expected_conditions as EC
-#     from bs4 import BeautifulSoup
+#     # 속성 {열번호: 너비}
+#     attrs = {"B": "12", "C": "11", "D": "49"}
+#     for key, value in attrs.items():
+#         ws.column_dimensions[f"{key}"].width = f"{value}"
 #
+#     # for i in range(1, ws.max_column):
+#     #     ws[f"A{i}"].font.copy(bold=True)
+#     # ws.rows(1).alignment = Alignment(ho)
+#     wb.save(news_path + "\\데일리 뉴스.xlsx")
+#     print("새 엑셀 파일 생성")
 #
-#     # CSV
-#     csv_file = open('종목 실시간 밸류에이션.csv', 'a', encoding='utf-8-sig', newline='')
-#     csv_writer = csv.writer(csv_file)
-#     csv_writer.writerow(['종목코드', '종목명', '업종코드', '업종명', '시가총액', 'PER', 'ROE', 'ROA', 'PBR', '유보율'])
-#
-#     #  headless
-#     options = webdriver.ChromeOptions()
-#     options.headless = True
-#     options.add_argument("window-size=1920x1080")
-#     options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.104 Safari/537.36")
-#     driver = webdriver.Chrome(options=options)
-#     driver.maximize_window()
-#     print("Get real time value start:")
-#     print(time.strftime("%Y-%m-%d %H:%M:%S"))
-#     #  mk_code_dict를 파라미터로
-#
-#     time.sleep(3)
-#     print(f"Start {value} Category")
-#     driver.get(f'https://finance.naver.com/sise/sise_group_detail.nhn?type=upjong&no={value}')
-#     wait = WebDriverWait(driver, 3)
-#
-#     # 기존 옵션 제거
-#     wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, '#option1'))).click()  # 거래량
-#     wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, '#option2'))).click()  # 매수호가
-#     wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, '#option3'))).click()  # 거래대금
-#     wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, '#option8'))).click()  # 매도호가
-#     wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, '#option9'))).click()  # 전일 거래량
-#
-#     # 원하는 옵션 클릭
-#     wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, '#option4'))).click()  # 시가총액
-#     wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, '#option6'))).click()  # PER
-#     wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, '#option12'))).click()  # ROE
-#     wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, '#option18'))).click()  # ROA
-#     wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, '#option24'))).click()  # PBR
-#     wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, '#option27'))).click()  # 유보율
-#
-#     # 옵션 적용 클릭
-#     wait.until(EC.visibility_of_element_located((By.CSS_SELECTOR, 'div.item_btn > a'))).click()  # 적용하기
-#
-#     for key, value in mk_code_dict.items():
-#         try:
-#             time.sleep(3)
-#             print(f"Start {value} Category")
-#             driver.get(f'https://finance.naver.com/sise/sise_group_detail.nhn?type=upjong&no={value}')
-#
-#             driver.save_screenshot(f"screenshot{key}.png")
-#             # 실시간 기업 밸류에이션 스크래핑
-#             soup = BeautifulSoup(driver.page_source, "html.parser")
-#             table = soup.select('#contentarea > div.box_type_l')[1].select('tbody > tr')[:-2]
-#             for line in table:
-#                 share_name = line.td.text
-#                 share_code = line.td.a['href'].replace("/item/main.nhn?code=", "")
-#                 info_list = [share_code, share_name, value, key]
-#
-#                 data = line.select('td')[4:-1]
-#                 for num in data:
-#                     num = num.text.replace(',', '')
-#                     info_list.append(num)
-#                 csv_writer.writerow(info_list)
-#               # ws.append(info_list)
-#
-#         except:
-#             print(f"err code: {value}")
-#             pass
-#     # wb.save("종목 실시간 벨류에이션.xlsx")
-#     driver.quit()
-#     csv_file.close()
-#     print("RealTimeValue Completed")
-#     print(time.strftime("%Y-%m-%d %H:%M:%S"))
-#
+# # 이미 디렉토리가 있다면 엑셀 파일 로드
+# else:
+#     wb = load_workbook(news_path + "\\데일리 뉴스.xlsx")
+#     ws = wb.active
+#     print("데일리뉴스 엑셀파일 로드")
+
+# 검색학 뉴스키워드
+while True:
+    keyword = input("키워드 입력 : ")
+    # keyword = ['sk', '현대차', '현대모비스', '기아차', '미국 증시', '연준', 'FOMC', '끝']
+    # 끝이라고 입력하면 프로그램 종료
+    if keyword == "끝":
+        break
+
+    # # 이미지 폴더 만들기
+    # img_path = f"stock_data\\News\\image"
+    # if not os.path.exists(img_path):
+    #     os.mkdir(img_path)
+
+    # 오늘날짜 함께 입력
+    today = datetime.date.today()
+    print(today)
+    # 뉴스 페이지 '최신순' 첫번재 페이지
+    url = f"https://search.naver.com/search.naver?where=news&query={keyword}&sm=tab_srt&sort=1&photo=0&field=0&reporter_article=&pd=0&ds=&de=&docid=&nso=so%3Add%2Cp%3Aall%2Ca%3Aall&mynews=0&refresh_start=0&related=0"
+    headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/89.0.4389.72 Safari/537.36 Edg/89.0.774.45"}
+    response = requests.get(url, headers=headers)
+    soup = BeautifulSoup(response.text, "html.parser")
+
+    t = soup.select('.news_area > a')
+    img = soup.select('.news_wrap .dsc_thumb img')
+
+    for i in range(len(t)):
+
+        # 타이틀 및 링크
+        title = t[i].text
+        link = t[i]['href']
+        # 내용 받아오기
+        news_req = requests.get(link).text
+        news_soup = BeautifulSoup(news_req, "html.parser")
+        content = news_soup.select_one("subTitle_s2 br").text.strip()
+        print(f"제목 : {title}")
+        print(f"링크 : {link}")
+        print(content)
+        print()
+        # ws.append([link, keyword, today, title])
+        # wb.save(news_path + "\\데일리 뉴스.xlsx")
+
+        # # 이미지도 함께 다운 / 입력
+        # img_url = img[i]['src']
+        # response = requests.get(img_url)
+        # response.raise_for_status()
+        #
+        # with open(img_path + f"\\{keyword}_{i + 1}.png", "wb") as f:
+        #     f.write(response.content)
+        #
+        # img_for_excel = Image(img_path + f"\\{keyword}_{i + 1}.png")
+        # insert_img = ws.add_image(img_for_excel, f"A{ws.max_row}")
+        # ws.append([insert_img, link, keyword, today, title])
+
+
+# for i in range(len(t)):
+    #     try:
+    #         # 타이틀 및 링크
+    #         title = t[i].text
+    #         link = t[i]['href']
+    #         # 내용 받아오기
+    #         news_res = requests.get(link)
+    #         news_soup = BeautifulSoup(news_res, "html.parser")
+    #         content = news_soup.select_one("subTitle_s2 br").text.strip()
+    #         print(f"제목 : {title}")
+    #         print(f"링크 : {link}")
+    #         print(content)
+    #         print()
+    #         # ws.append([link, keyword, today, title])
+    #         # wb.save(news_path + "\\데일리 뉴스.xlsx")
+    #
+    #         # # 이미지도 함께 다운 / 입력
+    #         # img_url = img[i]['src']
+    #         # response = requests.get(img_url)
+    #         # response.raise_for_status()
+    #         #
+    #         # with open(img_path + f"\\{keyword}_{i + 1}.png", "wb") as f:
+    #         #     f.write(response.content)
+    #         #
+    #         # img_for_excel = Image(img_path + f"\\{keyword}_{i + 1}.png")
+    #         # insert_img = ws.add_image(img_for_excel, f"A{ws.max_row}")
+    #         # ws.append([insert_img, link, keyword, today, title])
+    #     except:
+    #         pass
+
+
+
 # mk_code_dict = {'증권': '12', '건설': '42', '손해보험': '190', '디스플레이장비및부품': '199', '섬유,의류,신발,호화품': '134'}
 # get_real_time_value(mk_code_dict)
 
