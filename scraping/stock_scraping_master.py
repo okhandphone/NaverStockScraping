@@ -77,7 +77,7 @@ def get_share_code_from_naver():
 # 3. 엑셀에서 업종코드 딕셔너리로 가져오기
 def get_code_from_excel():
     from openpyxl import load_workbook  # 파일 불러오기
-    
+
     wb = load_workbook("stock_data\\mk_sh_code_naver.xlsx")
     ws = wb.active
 
@@ -283,8 +283,7 @@ def get_realtime_value():
     csv_file = open(dir_path + f'\\realtime_stock_value_{datetime.date.today()}.csv', 'w', encoding='utf-8-sig',
                     newline='')
     csv_writer = csv.writer(csv_file)
-    csv_writer.writerow(
-        ['URL', '종목코드', '종목명', '업종코드', '업종명', '등락률', '시가총액 (억 원)', 'PER', 'ROE', 'PEG', 'ROA', 'PBR', '유보율'])
+    csv_writer.writerow(['URL', '종목코드', '종목명', '업종코드', '업종명', '등락률', '시가총액 (억 원)', 'PER', 'ROE', 'PEG', 'ROA', 'PBR', '유보율'])
 
     '''
     # 2. 네이버 업종 크롤링
@@ -293,8 +292,7 @@ def get_realtime_value():
     options = webdriver.ChromeOptions()
     options.headless = True
     options.add_argument("window-size=1920x1080")
-    options.add_argument(
-        "user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.104 Safari/537.36")
+    options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.104 Safari/537.36")
     driver = webdriver.Chrome(options=options)
 
     # 마켓코드 받아오기
@@ -311,8 +309,7 @@ def get_realtime_value():
         driver.implicitly_wait(3)
         wait = WebDriverWait(driver, 3)
 
-        titles = driver.find_elements_by_css_selector(
-            "#contentarea > div:nth-child(5) > table > thead > tr:nth-child(1) > th")
+        titles = driver.find_elements_by_css_selector("#contentarea > div:nth-child(5) > table > thead > tr:nth-child(1) > th")
         title = [line.text for line in titles]
         print(title, "sel")
 
@@ -336,9 +333,10 @@ def get_realtime_value():
         # html 파싱
         soup = BeautifulSoup(driver.page_source, "lxml")
         # 타이틀 다시 확인
-        headers = soup.select('#contentarea > div:nth-child(5) > table > thead > tr:nth-child(1) > th')
-        head = [line.text for line in headers]
-        print(head, "soup")
+
+        titles = soup.select("div.box_type_l th")
+        title = [line.text for line in titles]
+        print(title, "soup")
         table = soup.select('#contentarea > div.box_type_l')[1].select('tbody > tr')[:-2]
 
         # 종목별 정보 추출 및 기록

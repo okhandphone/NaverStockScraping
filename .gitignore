@@ -12,7 +12,6 @@ db_conn.php
 *.xlsm
 *.csv
 
-
 git rm --cached *.xlsx
 git rm --cached *.xlsm
 git rm --cached *.csv
@@ -29,6 +28,10 @@ scraping/__pycache__/
 
 git rm -r --cached __pycache__/
 git rm -r --cached scraping/__pycache__/
+
+# idea
+.idea
+git rm -r --cached .idea/
 
 *.py[cod]
 *$py.class
