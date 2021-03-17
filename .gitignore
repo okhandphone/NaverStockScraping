@@ -21,7 +21,7 @@ git rm --cached *.csv
 stock_data/
 practice/
 
-
+git rm -r --cached stock_data/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

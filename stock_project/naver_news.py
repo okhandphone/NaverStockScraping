@@ -2,8 +2,8 @@ import requests
 from bs4 import BeautifulSoup
 import os
 import datetime
-import openpyxl
-from openpyxl.drawing.image import Image
+# import openpyxl
+# from openpyxl.drawing.image import Image
 from openpyxl import Workbook, load_workbook
 from openpyxl.styles import Font, Alignment, PatternFill, Border, Color, Side
 
