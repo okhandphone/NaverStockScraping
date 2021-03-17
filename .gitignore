@@ -1,6 +1,6 @@
 #1. config 디렉토리 무시
 config/
-​
+
 #2. db_conn.php 파일 무시
 db_conn.php
 
@@ -25,7 +25,10 @@ practice/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
+scraping/__pycache__/
+
 git rm -r --cached __pycache__/
+git rm -r --cached scraping/__pycache__/
 
 *.py[cod]
 *$py.class

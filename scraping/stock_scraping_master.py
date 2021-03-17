@@ -396,6 +396,7 @@ def get_realtime_value(mk_code_dict):
     from selenium.webdriver.support.ui import WebDriverWait
     from selenium.webdriver.support import expected_conditions as EC
 
+
     # CSV
     csv_file = open(f'stock_data\\realtime_stock_value_{datetime.date.today()}.csv', 'w', encoding='utf-8-sig', newline='')
     csv_writer = csv.writer(csv_file)
@@ -513,7 +514,7 @@ def get_market_fluctuation():
     # period = datetime.date.today()
 
     # 헤더
-    header = (['마켓명', '마켓코드', '전일대비 등락률'])
+    header = (['URL', '마켓명', '마켓코드', '전일대비 등락률'])
     csv_writer.writerow(header)
 
     # 종목코드 종목명 전일대비등락률
@@ -532,8 +533,9 @@ def get_market_fluctuation():
         market_name = td[0].text.strip()
         market_code = td[0].a["href"].replace("/sise/sise_group_detail.nhn?type=upjong&no=", "")
         fluc = td[1].text.strip().replace('%', '').replace('+', '')
+        link = "https://finance.naver.com/sise/sise_group_detail.nhn?type=theme&no=" + market_code
 
-        csv_writer.writerow([market_name, market_code, fluc])
+        csv_writer.writerow([link, market_name, market_code, fluc])
 
     print("csv done")
 
@@ -549,7 +551,7 @@ def get_theme_fluctuation():
     # period = datetime.date.today()
 
     # 헤더
-    header = (['테마명', '테마코드', '전일대비 등락률'])
+    header = (['URL', '테마명', '테마코드', '전일대비 등락률'])
     csv_writer.writerow(header)
 
     # 테마명 테마코드 전일대비등락률
@@ -569,8 +571,9 @@ def get_theme_fluctuation():
             theme_name = td[0].text.strip()
             theme_code = td[0].a["href"].replace("/sise/sise_group_detail.nhn?type=theme&no=", "")
             fluc = td[1].text.strip().replace('%', '').replace('+', '')
+            link = "https://finance.naver.com/sise/sise_group_detail.nhn?type=upjong&no=" + theme_code
 
-            csv_writer.writerow([theme_name, theme_code, fluc])
+            csv_writer.writerow([link, theme_name, theme_code, fluc])
 
     print("csv done")
 
