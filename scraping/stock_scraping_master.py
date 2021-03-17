@@ -5,14 +5,13 @@ import os, sys
 #  User-Agent
 headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.104 Safari/537.36"}
 
-
 '''
 1. 업종 종목 코드
 '''
 
 # 0. 한국거래소 종목, 업종 코드
 # 엑셀 파일 아닌 홈페이지에서 바로 받는 법 찾아보기
-def get_share_code():
+def get_share_code_from_KRX():
     # openpyxl로 엑셀 파일 읽기
     from openpyxl import load_workbook  # 파일 불러오기
     wb = load_workbook("stock_data\\krxcode.xlsx")  # 불러올 파일명 넣기
@@ -30,10 +29,12 @@ def get_share_code():
     return code_dict
 
 # 1. 네이버에서 업종코드 받기
-def get_naver_market_code():
+def get_market_code_from_naver():
     from scraping.web_scraping import create_soup
     soup = create_soup('https://finance.naver.com/sise/sise_group.nhn?type=upjong')
     table = soup.select('table.type_1 > tr > td > a')
+
+    # 기타 항목 제거 위해 딕셔너리로 반환
     mk_code_dict = {}
     for line in table:
         market_name = line.text
@@ -46,7 +47,7 @@ def get_naver_market_code():
     return mk_code_dict
 
 # 2. 네이버 업종코드를 통해 종목 코드 받기
-def get_share_code_from_naver(mk_code_dict):
+def get_share_code_from_naver():
     from scraping.web_scraping import create_soup
     from openpyxl import Workbook
     import time
@@ -55,6 +56,9 @@ def get_share_code_from_naver(mk_code_dict):
     ws = wb.active
     ws.title = "네이버 업종 종목코드"
     ws.append(['종목코드', '종목명', '업종코드', '업종명'])
+
+    # 업종코드 딕셔너리
+    mk_code_dict = get_market_code_from_naver()
 
     for key, value in mk_code_dict.items():
         print(f"Start {value} Category")
@@ -73,8 +77,7 @@ def get_share_code_from_naver(mk_code_dict):
 # 3. 엑셀에서 업종코드 딕셔너리로 가져오기
 def get_code_from_excel():
     from openpyxl import load_workbook  # 파일 불러오기
-    # 상대경로로 수정해야함
-    # wb = load_workbook("C:\\Users\\MING\\PycharmProjects\\web_automation\\stock_project\\mk_sh_code_naver.xlsx")  # 불러올 파일명 넣기
+    
     wb = load_workbook("stock_data\\mk_sh_code_naver.xlsx")
     ws = wb.active
 
@@ -88,13 +91,12 @@ def get_code_from_excel():
     return code_dict
 
 
-
 '''
 2. 네이버 테마 정보
 '''
 
 #  4. 네이버 테마 코드 받기
-def get_naver_theme_code():
+def get_theme_code_from_naver():
     import time
     from scraping.web_scraping import create_soup
     theme_code_list = [] # 테마 코드 리스트로 저장
@@ -116,7 +118,7 @@ def get_naver_theme_code():
 
 
 #  5. 네이버 테마별 테마명, 테마코드, 종목명, 종목코드, 설명 등 추출
-def get_theme_share_info(theme_code_list):
+def get_theme_share_info():
     import csv
     import time
     import datetime
@@ -131,8 +133,11 @@ def get_theme_share_info(theme_code_list):
     header = (['테마명', '테마코드', '종목명', '종목코드', '종목정보', '종목링크'])
     csv_writer.writerow(header)
 
+    # 테마 코드 리스트
+    th_code_list = get_theme_code_from_naver()
+
     # th_sh_info = [] # 테마명, 테마코드, 테마설명, 종목명, 종목코드, 종목 설명 리스트화
-    for th_code in theme_code_list:
+    for th_code in th_code_list:
         print(f"theme code: {th_code}")
         # time.sleep(3)
         url = f'https://finance.naver.com/sise/sise_group_detail.nhn?type=theme&no={th_code}'
@@ -151,15 +156,14 @@ def get_theme_share_info(theme_code_list):
             sh_name = tag.select('td')[0].text
             sh_code = tag.select('td')[0].a['href'].replace("/item/main.nhn?code=", "")
             sh_info = tag.select('td')[1].p.text
+            sh_link = "https://finance.naver.com/item/main.nhn?code=" + sh_code
             # th_sh_info.append([th_name, th_code, sh_name, sh_code, sh_info, sh_link])  # 리스트에 추가
             # ws.append([th_name, th_code, sh_name, sh_code, sh_info, sh_link]) # 엑셀에 저장
-            csv_writer.writerow([th_name, str(th_code), sh_name, str(sh_code), sh_info])
+            csv_writer.writerow([th_name, str(th_code), sh_name, str(sh_code), sh_info, sh_link])
 
     csv_file.close()
     print("Share code done")
     print(time.strftime("%Y-%m-%d %H:%M:%S"))
-
-
 
 
 '''
@@ -167,9 +171,8 @@ def get_theme_share_info(theme_code_list):
 '''
 # code_dict = {'189980': {'Share Name': '흥국에프엔비', 'Market Code': '031102', 'Market Name': '비알코올음료 및 얼음 제조업'}, '000540': {'Share Name': '흥국화재', 'Market Code': '116501', 'Market Name': '보험업'}, '003280': {'Share Name': '흥아해운', 'Market Code': '085001', 'Market Name': '해상 운송업'}, '037440': {'Share Name': '희림', 'Market Code': '137201', 'Market Name': '건축기술, 엔지니어링 및 관련 기술 서비스업'}, '238490': {'Share Name': '힘스', 'Market Code': '032902', 'Market Name': '특수 목적용 기계 제조업'}}
 
-# 6. 기간별 실적 스크래핑
-# share_code_naver.xlsx 파일에서 코드딕트 받아오기
-def get_financial_info(code_dict):
+# 기간별 실적 스크래핑
+def get_financial_info():
     import time
     import datetime
     from bs4 import BeautifulSoup
@@ -188,6 +191,8 @@ def get_financial_info(code_dict):
     driver.maximize_window()
     driver.implicitly_wait(3)
 
+    # 종목코드 딕셔너리
+    code_dict = get_code_from_excel()
     # header = "기간 ,Share Code,Share Name,Market Code,Market Name,매출액,영업이익,영업이익(발표기준),세전계속사업이익,당기순이익,  당기순이익(지배),  당기순이익(비지배),자산총계,부채총계,자본총계,  자본총계(지배),  자본총계(비지배),자본금,영업활동현금흐름,투자활동현금흐름,재무활동현금흐름,CAPEX,FCF,이자발생부채,영업이익률,순이익률,ROE(%),ROA(%),부채비율,자본유보율,EPS(원),PER(배),BPS(원),PBR(배),현금DPS(원),현금배당수익률,현금배당성향(%),발행주식수(보통주)".split(',')
 
     print("Get Year Financial Info Start : ")
@@ -254,139 +259,8 @@ def get_financial_info(code_dict):
     driver.quit()
 
 
-
-'''
-4.etf/etn
-'''
-
-# 6. ETF 코드 받기
-# wise_compny 사이트에서 etf 코드 가져오기
-def get_etf_code():
-    from scraping.web_scraping import create_soup
-
-    soup = create_soup("http://comp.wisereport.co.kr/ETF/lookup.aspx")
-    table = soup.select_one('table.table').tbody.select('tr')
-
-    etf_code = []
-    for tag in table:
-        td = tag.select('td')
-        if td[0].text == "ETF":
-            etf_code.append(td[1].text.strip())
-        # else:
-        #     etf_list.append([data.text.strip() for data in td])
-    print("ETF code done")
-    return etf_code
-
-# 7. ETN 코드받기
-def get_etn_code():
-    from scraping.web_scraping import create_soup
-
-    soup = create_soup("http://comp.wisereport.co.kr/ETF/lookup.aspx")
-    table = soup.select_one('table.table').tbody.select('tr')
-
-    etn_code = []
-    for tag in table:
-        td = tag.select('td')
-        if td[0].text == "ETN":
-            etn_code.append(td[1].text.strip())
-        # else:
-        #     etf_list.append([data.text.strip() for data in td])
-    print("ETN code done")
-    return etn_code
-
-# 7. ETN 코드받기
-# def get_etnf_list():
-#     from kyu_def.web_scraping import create_soup
-#     soup = create_soup("http://comp.wisereport.co.kr/ETF/lookup.aspx")
-#     table = soup.select_one('table.table').tbody.select('tr')
-#
-#     etnf_list = []
-#     for tag in table:
-#         td = tag.select('td')
-#         etnf_list.append([data.text.strip() for data in td])
-#
-#     return etnf_list
-
-
-# 8. 네이버 금융에서 개별 etf 정보 가져오기
-def get_etf_info(etf_code):
-    import time
-    import datetime
-    import csv
-    from scraping.web_scraping import create_soup
-    from selenium import webdriver
-    from bs4 import BeautifulSoup
-
-    # # CSV
-    csv_file = open(f'stock_data\\etf_{datetime.date.today()}.csv', 'w', encoding='utf-8-sig', newline='')
-    csv_writer = csv.writer(csv_file)
-    csv_writer.writerow(['ETF이름', '링크', 'ETF코드', '운용사', '수수료', '시가총액(억 원)', '수익률', '', '', '', '구성종목 TOP 10'])
-    csv_writer.writerow(['', '', '', '', '', '', '1개월', '3개월', '6개월', '1년', '1위', '', '2위', '', '3위', '', '4위', '', '5위', '', '6위', '','7위', '', '8위', '', '9위', '', '10위', ''])
-
-    # 헤드리스 셀레니움
-    options = webdriver.ChromeOptions()
-    options.headless = True
-    options.add_argument("window-size=1920x1080")
-    options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/88.0.4324.104 Safari/537.36")
-    driver = webdriver.Chrome(options=options)
-    driver.maximize_window()
-    driver.implicitly_wait(3)
-
-    print(f"Get ETF info :")
-    print(time.strftime("%Y-%m-%d %H:%M:%S"))
-
-    for code in etf_code:
-        time.sleep(3)
-        print(f"Start : {code}")
-        url = f'https://finance.naver.com/item/coinfo.nhn?code={code}'
-        driver.get(url)
-        soup = create_soup(url)
-
-        # 이름, 링크, 운용사, 수수료
-        etf_name = soup.select_one('#middle > div.h_company > div.wrap_company > h2 > a').text
-        etf_link = f'https://finance.naver.com/item/coinfo.nhn?code={code}'
-        company = soup.select_one('#tab_con1').select_one('div:nth-child(4)').select('td')[1].text
-        commission = soup.select_one('#tab_con1').select_one('div:nth-child(4)').select('td')[0].em.text.replace('%', '')
-        each_etf_info = [etf_name, etf_link, str(code), company, commission] # 1차 리스트 저장
-
-        # iframe으로 이동
-        driver.switch_to.frame('coinfo_cp')
-        time.sleep(1)
-        soup_iframe = BeautifulSoup(driver.page_source, "lxml")
-
-        # 시가총액
-        capital = soup_iframe.select_one('#status_grid_body').select('tr')[5].td.text.replace(',', '')[:-2]
-        each_etf_info.append(capital)
-
-        # 수익률
-        earnings = soup_iframe.select_one('#status_grid_body').select('tr')[-1].td.select('span')
-        for line in earnings:
-            earning = line.text.replace('%', '').replace('+', '')
-            each_etf_info.append(earning)
-
-        # 구성종목
-        top_10 = soup_iframe.select_one('#CU_grid_body').select('tr')[:10]
-        for line in top_10:
-            sh_name = line.select('td')[0].text
-            percent = line.select('td')[2].text
-            if percent == '-':
-                percent = ''
-            else:
-                percent = percent
-            each_etf_info.extend([sh_name, percent])
-            # 리스트 진짜 이방법밖에 없는거 실화..? 더 찾아보기
-            # each_etf_info.append(sh_name)  # 3차 리스트 저장
-            # each_etf_info.append(percent)
-        # csv에 입력
-        csv_writer.writerow(each_etf_info)
-
-    driver.quit()
-    print(f"ETF info completed")
-    print(time.strftime("%Y-%m-%d %H:%M:%S"))
-
-
-# 네이버 업종 밸류옵션값 변경
-def get_realtime_value(mk_code_dict):
+# 실시간 밸류 확인 (네이버 업종)
+def get_realtime_value():
     import os
     import csv
     import time
@@ -396,8 +270,6 @@ def get_realtime_value(mk_code_dict):
     from selenium.webdriver.common.by import By
     from selenium.webdriver.support.ui import WebDriverWait
     from selenium.webdriver.support import expected_conditions as EC
-    from stock_scraping_master import get_naver_market_code
-
     from openpyxl import load_workbook
     from openpyxl.styles import Font, Alignment, PatternFill, Border, Color, Side
     import pandas as pd
@@ -426,7 +298,7 @@ def get_realtime_value(mk_code_dict):
     driver = webdriver.Chrome(options=options)
 
     # 마켓코드 받아오기
-    # mk_code_dict = get_naver_market_code()
+    mk_code_dict = get_market_code_from_naver()
 
     for mk_name, mk_code in mk_code_dict.items():
         # try:
@@ -616,6 +488,11 @@ def get_realtime_value(mk_code_dict):
     print("엑셀 서식 완료")
 
 
+
+'''
+4. 수급
+'''
+
 def get_market_fluctuation():
     import csv
     import datetime
@@ -690,30 +567,63 @@ def get_theme_fluctuation():
 
     print("csv done")
 
-'''# 8. 네이버 금융에서 개별 etf 정보 가져오기
-def get_etf_info(etf_code):
+
+'''
+5.etf/etn
+'''
+
+# ETF 코드 받기
+# wise_compny 사이트에서 etf 코드 가져오기
+def get_etf_code_from_wise():
+    from scraping.web_scraping import create_soup
+
+    soup = create_soup("http://comp.wisereport.co.kr/ETF/lookup.aspx")
+    table = soup.select_one('table.table').tbody.select('tr')
+
+    etf_code = []
+    for tag in table:
+        td = tag.select('td')
+        if td[0].text == "ETF":
+            etf_code.append(td[1].text.strip())
+        # else:
+        #     etf_list.append([data.text.strip() for data in td])
+    print("ETF code done")
+    return etf_code
+
+# ETN 코드받기
+def get_etn_code_from_wise():
+    from scraping.web_scraping import create_soup
+
+    soup = create_soup("http://comp.wisereport.co.kr/ETF/lookup.aspx")
+    table = soup.select_one('table.table').tbody.select('tr')
+
+    etn_code = []
+    for tag in table:
+        td = tag.select('td')
+        if td[0].text == "ETN":
+            etn_code.append(td[1].text.strip())
+        # else:
+        #     etf_list.append([data.text.strip() for data in td])
+    print("ETN code done")
+    return etn_code
+
+# 네이버 금융에서 개별 etf 정보 가져오기
+def get_etf_info_from_naver():
     import time
+    import datetime
     import csv
-    from kyu_def.web_scraping import create_soup, create_csv
+    from scraping.web_scraping import create_soup
     from selenium import webdriver
     from bs4 import BeautifulSoup
-    from openpyxl import Workbook
 
-    # csv 테스트
-    title = 'etf_etn'
-    header = ['ETF이름', '링크', 'ETF코드', '시가총액(억 원)', '운용사', '수수료', '수익률', '', '', '', '구성종목']
-    csv_file = create_csv(title, header)
+    # # CSV
+    csv_file = open(f'stock_data\\etf_{datetime.date.today()}.csv', 'w', encoding='utf-8-sig', newline='')
     csv_writer = csv.writer(csv_file)
-    csv_writer.writerow(['', '', '', '', '', '', '1개월', '3개월', '6개월', '1년'])
+    csv_writer.writerow(['ETF이름', '링크', 'ETF코드', '운용사', '수수료', '시가총액(억 원)', '수익률', '', '', '', '구성종목 TOP 10'])
+    csv_writer.writerow(['', '', '', '', '', '', '1개월', '3개월', '6개월', '1년', '1위', '', '2위', '', '3위', '', '4위', '', '5위', '', '6위', '','7위', '', '8위', '', '9위', '', '10위', ''])
 
-    # # 워크북 생성
-    # wb = Workbook()
-    # ws = wb.active
-    # ws.title = 'ETF'
-
-    # # 엑셀 헤더
-    # ws.append(['ETF이름', '링크', 'ETF코드', '시가총액(억 원)', '운용사', '수수료', '수익률', '', '', '', '구성종목'])
-    # ws.append(['', '', '', '', '', '', '1개월', '3개월', '6개월', '1년'])
+    # ETF 코드
+    etf_code = get_etf_code_from_wise()
 
     # 헤드리스 셀레니움
     options = webdriver.ChromeOptions()
@@ -724,10 +634,12 @@ def get_etf_info(etf_code):
     driver.maximize_window()
     driver.implicitly_wait(3)
 
-    # etf 정보를 리스트화
-    etf_info = []
+    print(f"Get ETF info :")
+    print(time.strftime("%Y-%m-%d %H:%M:%S"))
+
     for code in etf_code:
         time.sleep(3)
+        print(f"Start : {code}")
         url = f'https://finance.naver.com/item/coinfo.nhn?code={code}'
         driver.get(url)
         soup = create_soup(url)
@@ -737,12 +649,12 @@ def get_etf_info(etf_code):
         etf_link = f'https://finance.naver.com/item/coinfo.nhn?code={code}'
         company = soup.select_one('#tab_con1').select_one('div:nth-child(4)').select('td')[1].text
         commission = soup.select_one('#tab_con1').select_one('div:nth-child(4)').select('td')[0].em.text.replace('%', '')
-        each_etf_info = [etf_name, etf_link, code, company, commission] # 1차 리스트 저장
+        each_etf_info = [etf_name, etf_link, str(code), company, commission] # 1차 리스트 저장
 
         # iframe으로 이동
         driver.switch_to.frame('coinfo_cp')
-        time.sleep(0.5)
-        soup_iframe = BeautifulSoup(driver.page_source, "html.parser")
+        time.sleep(1)
+        soup_iframe = BeautifulSoup(driver.page_source, "lxml")
 
         # 시가총액
         capital = soup_iframe.select_one('#status_grid_body').select('tr')[5].td.text.replace(',', '')[:-2]
@@ -752,12 +664,6 @@ def get_etf_info(etf_code):
         earnings = soup_iframe.select_one('#status_grid_body').select('tr')[-1].td.select('span')
         for line in earnings:
             earning = line.text.replace('%', '').replace('+', '')
-            if earning == "N/A":
-                earning = ''
-            elif earning == "":
-                earning = ''
-            else:
-                earning = earning
             each_etf_info.append(earning)
 
         # 구성종목
@@ -768,16 +674,14 @@ def get_etf_info(etf_code):
             if percent == '-':
                 percent = ''
             else:
-                percent = float(percent)
+                percent = percent
+            each_etf_info.extend([sh_name, percent])
             # 리스트 진짜 이방법밖에 없는거 실화..? 더 찾아보기
-            each_etf_info.append(sh_name)  # 3차 리스트 저장
-            each_etf_info.append(percent)
-
-            # iframe 나오기
-            driver.switch_to.default_content()
-
-        etf_info.append(each_etf_info)  # 각각의 etf 정보를 토탈 리스트에 넣어줌
-        ws.append(each_etf_info)  # 엑셀에 입력
+            # each_etf_info.append(sh_name)  # 3차 리스트 저장
+            # each_etf_info.append(percent)
+        # csv에 입력
+        csv_writer.writerow(each_etf_info)
 
     driver.quit()
-    return etf_info'''
+    print(f"ETF info completed")
+    print(time.strftime("%Y-%m-%d %H:%M:%S"))

@@ -1,4 +1,6 @@
 from scraping.stock_scraping_master import get_market_fluctuation, get_theme_fluctuation, get_realtime_value
+
+get_realtime_value()
 # mk_code_dict = get_naver_market_code()
 # get_share_code_from_naver(mk_code_dict)
 # get_realtime_value(mk_code_dict)
@@ -8,10 +10,10 @@ from scraping.stock_scraping_master import get_market_fluctuation, get_theme_flu
 # # get_financial_info(code_dict)
 # get_market_fluctuation()
 # get_theme_fluctuation()
-# get_realtime_value()
+
 # mk_code_dict = get_naver_market_code()
 # get_real_time_value(mk_code_dict)
-
+'''
 import os
 import csv
 import time
@@ -233,3 +235,4 @@ ws.column_dimensions["A"].hidden= True
 
 wb.save(file_name)
 print("엑셀 서식 완료")
+'''
