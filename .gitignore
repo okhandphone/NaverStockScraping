@@ -17,21 +17,24 @@ git rm --cached *.xlsm
 git rm --cached *.csv
 
 # 5. stock_data, practice디렉토리 무시
-stock_project/stock_data/
-practice/
+stock_project/stock_data
+practice
 
-git rm -r --cached stock_project/stock_data/
+git rm -r --cached stock_project/stock_data
 
 # Byte-compiled / optimized / DLL files
-__pycache__/
-scraping/__pycache__/
+__pycache__
+scraping/__pycache__
 
-git rm -r --cached __pycache__/
-git rm -r --cached scraping/__pycache__/
+git rm -r --cached __pycache__
+git rm -r --cached scraping/__pycache__
 
 # idea
 .idea
-git rm -r --cached .idea/
+stock_project/.idea
+
+git rm -r --cached .idea
+git rm -r --cached stock_project/.idea
 
 *.py[cod]
 *$py.class
