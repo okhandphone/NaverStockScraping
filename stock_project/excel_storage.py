@@ -6,14 +6,9 @@
 
 import os
 import csv
-import time
+
 import datetime
-from bs4 import BeautifulSoup
-from selenium import webdriver
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-from scraping.stock_scraping_master import get_naver_market_code
+
 from openpyxl import Workbook, load_workbook
 from openpyxl.styles import Font, Alignment, PatternFill, Border, Color, Side
 import pandas as pd
@@ -34,33 +29,43 @@ else:
 
 print("df to 엑셀")
 
-
+'''
+엑셀불러오기
+'''
+# cell 갯수를 모를 때
+for x in range(1, ws.max_row + 1):
+    for y in range(1, ws.max_column + 1):
+        print(ws.cell(row=x, column=y).value, end=" ") # 1 2 3 4 ..
+    print()
 '''
 엑셀 각종 서식 모음
 '''
 
 # 셀서식
 align_center = Alignment(horizontal="center", vertical="center")
-thin_border = Border(left=Side(style="thin"), right=Side(style="thin"), top=Side(style="thin"), bottom=Side(style="thin"))
+thin_border = Border(left=Side(style="thin"), right=Side(style="thin"), top=Side(style="thin"),
+                     bottom=Side(style="thin"))
 
 # 글꼴 서식
+font_normal = Font(name="맑은 고딕", size=11)
 font_bold = Font(name="맑은 고딕", size=11, bold=True)
-font_red = Font(name="맑은 고딕", size=11, color="FE2E2E")
-font_blue = Font(name="맑은 고딕", size=11, color="1E88E5")
 
 # color_fill
-green_fill = PatternFill(patternType="solid", fgColor=Color("E9F7EF"))
 orange_fill = PatternFill(patternType="solid", fgColor=Color("FEF5E7"))
 
-light_pink_fill = PatternFill(patternType="solid", fgColor=Color("FDEDEC"))
-pink_fill = PatternFill(patternType="solid", fgColor=Color("F5B7B1"))
-dark_pink_fill = PatternFill(patternType="solid", fgColor=Color("EC7063"))
-red_fill = PatternFill(patternType="solid", fgColor=Color("E74C3C"))
+light_pink_fill = PatternFill(patternType="solid", fgColor=Color("ffe6e6"))
+pink_fill = PatternFill(patternType="solid", fgColor=Color("ffcccc"))
+pink_fill_2 = PatternFill(patternType="solid", fgColor=Color("ffb3b3"))
+pink_fill_3 = PatternFill(patternType="solid", fgColor=Color("ff8080"))
+dark_pink_fill = PatternFill(patternType="solid", fgColor=Color("ff6666"))
+red_fill = PatternFill(patternType="solid", fgColor=Color("ff0000"))
 
-light_blue_fill = PatternFill(patternType="solid", fgColor=Color("D6EAF8"))
-blue_fill = PatternFill(patternType="solid", fgColor=Color("AED6F1"))
-dark_blue_fill = PatternFill(patternType="solid", fgColor=Color("5DADE2"))
-navy_fill = PatternFill(patternType="solid", fgColor=Color("2E86C1"))
+light_blue_fill = PatternFill(patternType="solid", fgColor=Color("e6f5ff"))
+blue_fill = PatternFill(patternType="solid", fgColor=Color("ccebff"))
+blue_fill_2 = PatternFill(patternType="solid", fgColor=Color("99d6ff"))
+blue_fill_3 = PatternFill(patternType="solid", fgColor=Color("66c2ff"))
+dark_blue_fill = PatternFill(patternType="solid", fgColor=Color("4db8ff"))
+navy_fill = PatternFill(patternType="solid", fgColor=Color("008ae6"))
 
 # 워크북 불러오기
 wb = load_workbook(file_name)
@@ -129,3 +134,91 @@ ws.column_dimensions["A"].hidden= True
 
 wb.save(file_name)
 print("엑셀 서식 완료")
+
+# 셀서식
+    align_center = Alignment(horizontal="center", vertical="center")
+    thin_border = Border(left=Side(style="thin"), right=Side(style="thin"), top=Side(style="thin"),
+                         bottom=Side(style="thin"))
+
+    # 글꼴 서식
+    font_normal = Font(name="맑은 고딕", size=11)
+    font_bold = Font(name="맑은 고딕", size=11, bold=True)
+
+    # color_fill
+    orange_fill = PatternFill(patternType="solid", fgColor=Color("FEF5E7"))
+
+    light_pink_fill = PatternFill(patternType="solid", fgColor=Color("ffe6e6"))
+    pink_fill = PatternFill(patternType="solid", fgColor=Color("ffcccc"))
+    pink_fill_2 = PatternFill(patternType="solid", fgColor=Color("ffb3b3"))
+    pink_fill_3 = PatternFill(patternType="solid", fgColor=Color("ff8080"))
+    dark_pink_fill = PatternFill(patternType="solid", fgColor=Color("ff6666"))
+    red_fill = PatternFill(patternType="solid", fgColor=Color("ff0000"))
+
+    light_blue_fill = PatternFill(patternType="solid", fgColor=Color("e6f5ff"))
+    blue_fill = PatternFill(patternType="solid", fgColor=Color("ccebff"))
+    blue_fill_2 = PatternFill(patternType="solid", fgColor=Color("99d6ff"))
+    blue_fill_3 = PatternFill(patternType="solid", fgColor=Color("66c2ff"))
+    dark_blue_fill = PatternFill(patternType="solid", fgColor=Color("4db8ff"))
+    navy_fill = PatternFill(patternType="solid", fgColor=Color("008ae6"))
+
+    # 워크북 불러오기
+    wb = load_workbook("stock_data/데일리등락률_통합.xlsx")
+    for item2 in ["업종", "테마"]:
+        ws = wb[f"{item2}"]
+
+        # 컬럼너비
+        ws.column_dimensions["B"].width = 30
+
+        # 헤더 서식
+        for cell in ws["A"]:
+            cell.font = font_normal
+        for y in range(1, ws.max_column + 1):
+            ws.cell(row=1, column=y).font = font_bold
+            ws.cell(row=1, column=y).alignment = align_center
+            ws.cell(row=1, column=y).fill = orange_fill
+
+        # 등락률
+        for x in range(2, ws.max_row + 1):
+            for y in range(3, ws.max_column + 1):
+                if ws.cell(row=x, column=y).value == None:
+                    continue
+                if ws.cell(row=x, column=y).value > 5:
+                    ws.cell(row=x, column=y).fill = red_fill
+                elif ws.cell(row=x, column=y).value > 4:
+                    ws.cell(row=x, column=y).fill = dark_pink_fill
+                elif ws.cell(row=x, column=y).value > 3:
+                    ws.cell(row=x, column=y).fill = pink_fill_3
+                elif ws.cell(row=x, column=y).value > 2:
+                    ws.cell(row=x, column=y).fill = pink_fill_2
+                elif ws.cell(row=x, column=y).value > 1:
+                    ws.cell(row=x, column=y).fill = pink_fill
+                elif ws.cell(row=x, column=y).value > 0:
+                    ws.cell(row=x, column=y).fill = light_pink_fill
+                elif ws.cell(row=x, column=y).value > -1:
+                    ws.cell(row=x, column=y).fill = light_blue_fill
+                elif ws.cell(row=x, column=y).value > -2:
+                    ws.cell(row=x, column=y).fill = blue_fill
+                elif ws.cell(row=x, column=y).value > -3:
+                    ws.cell(row=x, column=y).fill = blue_fill_2
+                elif ws.cell(row=x, column=y).value > -4:
+                    ws.cell(row=x, column=y).fill = dark_blue_fill
+                else:
+                    ws.cell(row=x, column=y).fill = navy_fill
+
+        # 전체 보더
+        for x in range(1, ws.max_row + 1):
+            for y in range(1, ws.max_column + 1):
+                ws.cell(row=x, column=y).border = thin_border
+
+        # 오토필터
+        ws.auto_filter.ref = ws.dimensions
+        ws.freeze_panes = 'C2'
+
+        # 하이퍼링크
+        hyper_dict = {"업종": "https://finance.naver.com/sise/sise_group_detail.nhn?type=upjong&no=",
+                      "테마": "https://finance.naver.com/sise/sise_group_detail.nhn?type=theme&no="}
+        for i in range(2, ws.max_row):
+            ws[f"B{i}"].hyperlink = hyper_dict[f"{item2}"] + str(ws[f"A{i}"].value)
+
+    wb.save("stock_data/데일리등락률_통합.xlsx")
+    print("엑셀 서식 완료")
